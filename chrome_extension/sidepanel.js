@@ -1,6 +1,6 @@
 const DEFAULT_SERVER = "http://127.0.0.1:17650";
 const BRIDGE_PAYLOAD_TYPE = "application/x-file-browser-file";
-const BRIDGE_TEXT_PREFIX = "__OPENTOCHROME_PAYLOAD__::";
+const BRIDGE_TEXT_PREFIX = "__FILE_BROWSER_PAYLOAD__::";
 
 const IMAGE_EXTS = new Set([
   "apng",

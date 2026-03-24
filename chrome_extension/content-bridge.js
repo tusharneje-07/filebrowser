@@ -1,5 +1,5 @@
 const PAYLOAD_TYPE = "application/x-file-browser-file";
-const TEXT_PREFIX = "__OPENTOCHROME_PAYLOAD__::";
+const TEXT_PREFIX = "__FILE_BROWSER_PAYLOAD__::";
 let pendingDragUntil = 0;
 
 function hasBridgePayload(event) {
