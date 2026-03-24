@@ -1,31 +1,30 @@
 # File Browser
 
-This project contains:
+Production-ready local file browser product for Linux:
 
-- A Flask server (`file_server.py`) that serves files from configured roots
-- A Tkinter + system-tray manager (`tray_server.py`) to control server and roots
-- A Chrome side panel extension in `chrome_extension/`
-- 20 demo text files inside `SharedFiles/`
+- Flask-based file server (`file_server.py`)
+- Linux tray manager with Tkinter (`tray_server.py`)
+- Chrome side panel extension (`chrome_extension/`)
+- Configurable roots database (`paths_db.json`)
+- Runtime network config (`runtime_config.json`)
+- Optional user-level systemd service (`file_browser_service.py`)
 
-## Features
+## Default Runtime
 
-- File-browser style explorer (folders + files)
-- Configurable root paths from `paths_db.json`
-- Click any file row to preview content
-- Image preview support in the bottom dock
-- Toggle button to hide/show preview pane
-- Drag a file from the extension list into any website upload target
-- Click `Send to site` for direct active-tab file injection fallback
-- Back/forward breadcrumb navigation in the side panel
+- Host: `127.0.0.1`
+- Port: `17650` (high port to avoid common conflicts)
 
-## Upload to websites from extension
+Update host/port from the tray app under **Runtime Settings**.
 
-1. Open a website with drag-and-drop or file-input upload
-2. Keep the side panel open
-3. Drag any file row from the explorer and drop it on the website upload area
-4. The extension bridge converts it into a real file drop/input change event
+## Chrome Extension
 
-## Run with tray app (recommended)
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select `chrome_extension`
+5. Open side panel from extension icon
+
+## Dev Run
 
 ```bash
 python3 -m venv .venv
@@ -34,23 +33,45 @@ pip install -r requirements.txt
 python tray_server.py
 ```
 
-- Server starts at `http://127.0.0.1:5000`
-- App starts with manager window and tray support
-- If you quit/terminate tray app, server stops automatically
-- Add/remove folder roots from the Tkinter manager and save to `paths_db.json`
+## Linux Installer (Product Mode)
 
-## Optional: run Flask only
+Install for current user:
 
 ```bash
-python file_server.py
+./installer/linux/install.sh
 ```
 
-## Load the extension in Chrome
+This installs:
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked**
-4. Select folder: `chrome_extension`
-5. Click the extension icon to open the side panel
+- App files at `~/.local/share/file-browser`
+- Launch commands:
+  - `file-browser` (tray manager)
+  - `file-browser-service` (headless service)
+- User systemd unit: `file-browser.service`
+- Desktop launcher entry
 
-If needed, update the server URL field in the panel.
+Enable service startup:
+
+```bash
+systemctl --user enable --now file-browser.service
+```
+
+Check status:
+
+```bash
+systemctl --user status file-browser.service
+```
+
+## Build Linux Release Archive
+
+```bash
+./installer/linux/build_release.sh
+```
+
+Tarball is created in `dist/`.
+
+## Uninstall
+
+```bash
+./installer/linux/uninstall.sh
+```

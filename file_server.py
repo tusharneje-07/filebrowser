@@ -7,6 +7,8 @@ from pathlib import Path
 from flask import Flask, jsonify, make_response, request, send_file
 from werkzeug.utils import secure_filename
 
+from runtime_config import load_runtime_config
+
 BASE_DIR = Path(__file__).resolve().parent
 FILES_DIR = BASE_DIR / "SharedFiles"
 FILES_DIR.mkdir(parents=True, exist_ok=True)
@@ -292,4 +294,5 @@ def upload_files():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    runtime = load_runtime_config()
+    app.run(host=runtime["host"], port=runtime["port"], debug=False)

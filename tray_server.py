@@ -49,12 +49,14 @@ from tkinter import filedialog, messagebox, ttk
 from werkzeug.serving import make_server
 
 from file_server import PATHS_DB_FILE, app
+from runtime_config import load_runtime_config, save_runtime_config
 
 
 class FlaskServerController:
-    def __init__(self, host: str = "127.0.0.1", port: int = 5000):
-        self.host = host
-        self.port = port
+    def __init__(self):
+        runtime = load_runtime_config()
+        self.host = runtime["host"]
+        self.port = runtime["port"]
         self._server = None
         self._thread = None
         self._lock = threading.Lock()
@@ -81,6 +83,12 @@ class FlaskServerController:
             self._server.server_close()
             self._server = None
             self._thread = None
+
+    def restart(self, host: str, port: int) -> None:
+        self.stop()
+        self.host = host
+        self.port = port
+        self.start()
 
 
 class PathsDB:
@@ -154,6 +162,26 @@ class TrayServerApp:
             frame,
             text="Manage browse paths used by Flask. Add folders with the picker and click Save Paths.",
         ).pack(fill=tk.X, pady=(8, 8))
+
+        runtime_row = ttk.LabelFrame(frame, text="Runtime Settings", padding=10)
+        runtime_row.pack(fill=tk.X, pady=(0, 8))
+
+        ttk.Label(runtime_row, text="Host").grid(row=0, column=0, sticky=tk.W)
+        self.host_var = tk.StringVar(value=self.server.host)
+        ttk.Entry(runtime_row, textvariable=self.host_var).grid(
+            row=0, column=1, sticky=tk.EW, padx=(8, 8)
+        )
+
+        ttk.Label(runtime_row, text="Port").grid(row=0, column=2, sticky=tk.W)
+        self.port_var = tk.StringVar(value=str(self.server.port))
+        ttk.Entry(runtime_row, width=8, textvariable=self.port_var).grid(
+            row=0, column=3, sticky=tk.W, padx=(8, 8)
+        )
+
+        ttk.Button(runtime_row, text="Save Runtime", command=self.save_runtime_settings).grid(
+            row=0, column=4, sticky=tk.E
+        )
+        runtime_row.columnconfigure(1, weight=1)
 
         list_wrap = ttk.Frame(frame)
         list_wrap.pack(fill=tk.BOTH, expand=True)
@@ -354,7 +382,26 @@ class TrayServerApp:
 
     def _update_server_status(self) -> None:
         status = "Running" if self.server.is_running else "Stopped"
-        self.server_status_var.set(f"Server: {status} (http://127.0.0.1:5000)")
+        self.server_status_var.set(
+            f"Server: {status} (http://{self.server.host}:{self.server.port})"
+        )
+
+    def save_runtime_settings(self) -> None:
+        host = self.host_var.get().strip() or "127.0.0.1"
+        try:
+            port = int(self.port_var.get().strip())
+        except ValueError:
+            messagebox.showerror("Invalid Port", "Port must be a number between 1024 and 65535.")
+            return
+
+        if port < 1024 or port > 65535:
+            messagebox.showerror("Invalid Port", "Port must be between 1024 and 65535.")
+            return
+
+        save_runtime_config(host, port)
+        self.server.restart(host, port)
+        self._update_server_status()
+        messagebox.showinfo("Runtime Saved", f"Server restarted on http://{host}:{port}")
 
     def reload_paths(self) -> None:
         self.paths = self.db.load()
