@@ -1,0 +1,3 @@
+Demo file 19
+CORS is enabled on the Flask server for local extension requests.
+This allows fetch from chrome-extension:// origin.

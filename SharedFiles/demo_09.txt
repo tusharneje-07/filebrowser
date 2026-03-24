@@ -1,0 +1,3 @@
+Demo file 09
+The extension stores the server URL in chrome.storage.local.
+You can switch between localhost and 127.0.0.1 if needed.

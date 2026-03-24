@@ -1,0 +1,3 @@
+Demo file 18
+Side panel works best on recent Chrome versions
+that support the Manifest V3 sidePanel API.

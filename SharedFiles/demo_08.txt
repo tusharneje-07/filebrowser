@@ -1,0 +1,3 @@
+Demo file 08
+The extension runs as a Chrome side panel.
+Click the extension icon to open it like a sidebar.

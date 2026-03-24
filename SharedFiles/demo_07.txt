@@ -1,0 +1,3 @@
+Demo file 07
+File server endpoint: POST /api/upload
+Use multipart form field name "files" for uploads.

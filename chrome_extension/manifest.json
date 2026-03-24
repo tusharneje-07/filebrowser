@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "File Browser Sidebar",
+  "description": "Browse local files and drag them into website upload areas.",
+  "version": "1.5.0",
+  "permissions": ["sidePanel", "storage", "tabs"],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*",
+    "http://localhost:5000/*"
+  ],
+  "action": {
+    "default_title": "File Browser Sidebar"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  }
+}

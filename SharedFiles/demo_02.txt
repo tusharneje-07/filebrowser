@@ -1,0 +1,3 @@
+Demo file 02
+Drag and drop any local files into the extension upload box.
+Uploaded files will appear in the sidebar list.

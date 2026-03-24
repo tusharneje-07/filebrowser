@@ -1,0 +1,3 @@
+Demo file 13
+Security note: filenames are sanitized with secure_filename.
+Path traversal patterns are rejected.

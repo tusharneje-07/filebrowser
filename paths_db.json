@@ -1,0 +1,14 @@
+{
+  "roots": [
+    {
+      "id": "file_browser_root",
+      "label": "Shared Files",
+      "path": "/run/media/tusharneje/New Volume1/Projects and Coding/Projects/File Browser/SharedFiles"
+    },
+    {
+      "id": "new_volume1",
+      "label": "New Volume1",
+      "path": "/run/media/tusharneje/New Volume1"
+    }
+  ]
+}
