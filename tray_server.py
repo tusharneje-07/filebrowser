@@ -137,25 +137,20 @@ class FileBrowserApp:
 
     def _init_tray(self):
         if pystray:
-            # We use a non-detached run to keep the process alive without the TK window
             self.tray = pystray.Icon("filebrowser", self._create_icon_img(), "FileBrowser", menu=pystray.Menu(
                 pystray.MenuItem("Open", self.show_window, default=True),
                 pystray.MenuItem("Exit", self.quit_app)
             ))
-            # Run tray in a separate thread so it doesn't block TK mainloop
+            # Start tray in a daemon thread
             threading.Thread(target=self.tray.run, daemon=True).start()
 
     def show_window(self, *_):
-        # Force the window to show on top
         self.root.after(0, self._force_focus)
 
     def _force_focus(self):
         self.root.deiconify()
         self.root.lift()
         self.root.focus_force()
-        if platform.system() == "Windows":
-            self.root.attributes('-topmost', True)
-            self.root.after(100, lambda: self.root.attributes('-topmost', False))
 
     def hide_to_tray(self):
         self.root.withdraw()
@@ -165,7 +160,7 @@ class FileBrowserApp:
         if hasattr(self, 'tray'): self.tray.stop()
         if lock_socket: lock_socket.close()
         self.root.destroy()
-        sys.exit(0)
+        os._exit(0) # Force exit to prevent hanging
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "uninstall":
