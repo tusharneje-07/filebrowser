@@ -13,13 +13,29 @@ except:
 # --- Configuration ---
 PORT = 17650
 LOCK_PORT = 17651
-DB_FILE = Path(__file__).parent / "paths_db.json"
+CONFIG_DIR = Path.home() / ".config" / "filebrowser"
+DB_FILE = CONFIG_DIR / "paths_db.json"
 SHOW_LOGS = False
 
 
 def load_db():
+    if not CONFIG_DIR.exists():
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
     if not DB_FILE.exists():
         return {"roots": [], "port": 17650, "show_logs": False}
+    try:
+        with open(DB_FILE, "r") as f:
+            data = json.load(f)
+            # Ensure defaults exist
+            if "port" not in data:
+                data["port"] = 17650
+            if "show_logs" not in data:
+                data["show_logs"] = False
+            return data
+    except:
+        return {"roots": [], "port": 17650, "show_logs": False}
+
     try:
         with open(DB_FILE, "r") as f:
             data = json.load(f)
@@ -215,13 +231,15 @@ def uninstall():
         desktop_file.unlink()
         print(f"Removed {desktop_file}")
 
-    # Remove the installation directory
+    # Remove the installation directory (code only)
     if install_dir.exists():
         import shutil
 
         shutil.rmtree(install_dir)
         print(f"Removed installation directory: {install_dir}")
 
+    print("\nNOTE: Your configuration and roots in ~/.config/filebrowser were kept.")
+    print("To remove them, run: rm -rf ~/.config/filebrowser")
     print("Uninstallation complete.")
     sys.exit(0)
 

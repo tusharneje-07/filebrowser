@@ -29,7 +29,7 @@ mkdir -p "$INSTALL_DIR" "$BIN_DIR" > /dev/null 2>&1
 cd "$INSTALL_DIR" > /dev/null 2>&1
 BASE_URL="https://raw.githubusercontent.com/tusharneje-07/file_browser/main"
 curl -fsSL "$BASE_URL/tray_server.py" -o tray_server.py > /dev/null 2>&1
-curl -fsSL "$BASE_URL/paths_db.json" -o paths_db.json > /dev/null 2>&1
+# Note: paths_db.json is now managed in ~/.config/filebrowser/ by the app itself
 
 # Dependencies quietly
 PYTHON_BIN=$(which python3)
