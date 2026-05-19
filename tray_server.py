@@ -111,7 +111,7 @@ from tkinter import filedialog, messagebox, ttk
 
 # Platform Fixes for Tray
 if platform.system().lower() == "linux":
-    # TRY ALL BACKENDS if appindicator fails
+    # Try to force appindicator on Linux for better tray visibility
     os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
 
 try: import pystray
@@ -126,7 +126,7 @@ class FileBrowserApp:
         self.root.title("File Browser Manager")
         self.root.geometry("640x480")
         
-        # Withdraw the window so it starts hidden
+        # Withdraw immediately for hidden startup
         self.root.withdraw()
         
         self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
@@ -210,22 +210,22 @@ class FileBrowserApp:
 
     def _init_tray(self):
         if pystray:
+            # Explicitly create an icon image that is known to work
             img = Image.new("RGBA", (64, 64), (15, 23, 42, 255))
             d = ImageDraw.Draw(img)
-            d.rounded_rectangle((4, 4, 60, 60), radius=12, fill=(59, 130, 246))
+            d.rounded_rectangle((4, 4, 60, 60), radius=12, fill=(59, 130, 246, 255))
             
-            # Start pystray in its own thread
             self.tray = pystray.Icon("filebrowser", img, "FileBrowser", menu=pystray.Menu(
                 pystray.MenuItem("Open Manager", self.show_window, default=True),
                 pystray.MenuItem("Exit", self.quit_app)
             ))
-            # Use non-daemon thread for pystray to prevent it from being reaped
-            # but keep a reference to it.
+            # Start tray in a separate thread
             self.tray_thread = threading.Thread(target=self.tray.run)
+            self.tray_thread.daemon = True
             self.tray_thread.start()
 
     def show_window(self, *_): self.root.after(0, lambda: (self.root.deiconify(), self.root.lift(), self.root.focus_force()))
-    def hide_to_tray(self): self.root.withdraw()
+    def hide_to_tray(self, *_): self.root.withdraw()
     def quit_app(self, *_):
         if hasattr(self, 'srv'): self.srv.shutdown()
         if hasattr(self, 'tray'): self.tray.stop()
@@ -234,10 +234,5 @@ class FileBrowserApp:
         os._exit(0)
 
 if __name__ == "__main__":
-    # Ensure a display is available for Tkinter
-    if platform.system() != "Windows" and not os.environ.get("DISPLAY"):
-         print("Error: No display found. This application requires a GUI environment.")
-         sys.exit(1)
-    
     app_inst = FileBrowserApp()
     app_inst.root.mainloop()
