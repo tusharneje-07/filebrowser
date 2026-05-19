@@ -30,6 +30,12 @@ The project consists of two integrated components:
 Installation is handled via an automated script that configures the environment and creates a desktop entry.
 
 ```bash
+curl -fsSL https://tusharneje.in/projects/fileserver/setup.sh | bash
+```
+
+Alternatively, use the GitHub direct link:
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/tusharneje-07/filebrowser/main/installer/setup.sh | bash
 ```
 
