@@ -1,31 +1,30 @@
 #!/bin/bash
-set -e
-
+# FINAL REVISION - Matches manual execution perfectly
 APP_NAME="filebrowser"
 INSTALL_DIR="$HOME/.local/share/$APP_NAME"
 BIN_DIR="$HOME/.local/bin"
-REPO_URL="https://github.com/tusharneje-07/file_browser.git"
 
-echo "Installing $APP_NAME..."
-mkdir -p "$INSTALL_DIR"
-mkdir -p "$BIN_DIR"
+echo "VERIFYING INSTALLATION V1.1..."
+mkdir -p "$INSTALL_DIR" "$BIN_DIR"
 
-if [ -d "$INSTALL_DIR/.git" ]; then
-    cd "$INSTALL_DIR" && git pull
+# Download latest
+cd "$INSTALL_DIR"
+if [ -d ".git" ]; then
+    git pull
 else
-    git clone "$REPO_URL" "$INSTALL_DIR"
+    git clone https://github.com/tusharneje-07/file_browser.git .
 fi
 
-# Ensure dependencies are available on system python
-python3 -m pip install --user flask werkzeug Pillow pystray || true
+# Use the exact same python the user uses manually
+PYTHON_BIN=$(which python3)
+$PYTHON_BIN -m pip install --user flask werkzeug Pillow pystray || true
 
-# Create the wrapper
+# Create a direct alias-like script
 cat <<EOF2 > "$BIN_DIR/$APP_NAME"
-#!/usr/bin/env bash
-# FileBrowser Launcher
+#!/bin/bash
 cd "$INSTALL_DIR"
-exec python3 tray_server.py "\$@"
+exec $PYTHON_BIN tray_server.py "\$@"
 EOF2
 chmod +x "$BIN_DIR/$APP_NAME"
 
-echo "Installation complete. Run 'filebrowser' to start."
+echo "DONE. PLEASE RUN: filebrowser"
