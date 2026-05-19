@@ -16,13 +16,13 @@ else
     git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
-# IMPORTANT: Do not use venv if it causes tray issues. 
-# We will use the system python but ensure dependencies are present.
+# Ensure dependencies are available on system python
 python3 -m pip install --user flask werkzeug Pillow pystray || true
 
+# Create the wrapper
 cat <<EOF2 > "$BIN_DIR/$APP_NAME"
-#!/bin/bash
-# Simple wrapper that mimics manual execution
+#!/usr/bin/env bash
+# FileBrowser Launcher
 cd "$INSTALL_DIR"
 exec python3 tray_server.py "\$@"
 EOF2

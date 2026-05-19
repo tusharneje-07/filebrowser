@@ -1,16 +1,15 @@
 from __future__ import annotations
-import json, os, platform, subprocess, threading, sys, socket, time, signal, tempfile
+import json, os, platform, subprocess, threading, sys, socket, time, signal
 from pathlib import Path
 from datetime import datetime
 
-# --- Constants ---
+# --- Configuration ---
 BASE_DIR = Path(__file__).resolve().parent
 PATHS_DB_FILE = BASE_DIR / "paths_db.json"
 RUNTIME_CONFIG_FILE = BASE_DIR / "runtime_config.json"
 FLASK_PORT = 17650
 LOCK_PORT = 17651 
 
-# --- Process Control ---
 def get_pids_for_port(port):
     try:
         output = subprocess.check_output(['lsof', '-t', f'-i:{port}'], stderr=subprocess.DEVNULL).decode()
@@ -36,15 +35,7 @@ def acquire_lock():
         return True
     except: return False
 
-# --- Config Management ---
-def load_runtime_config():
-    if not RUNTIME_CONFIG_FILE.exists(): return {"host": "127.0.0.1", "port": FLASK_PORT}
-    try: return json.loads(RUNTIME_CONFIG_FILE.read_text())
-    except: return {"host": "127.0.0.1", "port": FLASK_PORT}
-
-def save_runtime_config(host, port):
-    RUNTIME_CONFIG_FILE.write_text(json.dumps({"host": host, "port": port}, indent=2))
-
+# --- Persistence ---
 def load_paths():
     if not PATHS_DB_FILE.exists():
         default = {"roots": [{"id": "root", "label": "Shared Files", "path": str(BASE_DIR / "SharedFiles")}]}
@@ -56,48 +47,22 @@ def load_paths():
 def save_paths(roots):
     PATHS_DB_FILE.write_text(json.dumps({"roots": roots}, indent=2))
 
-# --- Flask App ---
-from flask import Flask, jsonify, request, send_file
+# --- Server ---
+from flask import Flask, jsonify, request
 from werkzeug.serving import make_server
-from werkzeug.utils import secure_filename
-
 app = Flask(__name__)
 @app.after_request
 def add_cors(r): r.headers["Access-Control-Allow-Origin"] = "*"; return r
-
 @app.route("/api/roots")
 def list_roots(): return jsonify({"roots": load_paths()})
 
-@app.route("/api/browse")
-def browse_files():
-    root_id = request.args.get("root", "root")
-    path_req = request.args.get("path", "").strip("/")
-    roots = load_paths()
-    root = next((r for r in roots if r["id"] == root_id), None)
-    if not root: return jsonify({"error": "Invalid root"}), 400
-    base = Path(root["path"])
-    target = (base / path_req).resolve()
-    if not str(target).startswith(str(base.resolve())): return jsonify({"error": "Forbidden"}), 403
-    entries = []
-    if target.exists() and target.is_dir():
-        for item in sorted(target.iterdir(), key=lambda x: (x.is_file(), x.name.lower())):
-            stat = item.stat()
-            entries.append({
-                "name": item.name, "type": "directory" if item.is_dir() else "file",
-                "relative_path": str(item.relative_to(base)).replace("\\", "/"),
-                "size": 0 if item.is_dir() else stat.st_size,
-                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
-            })
-    return jsonify({"entries": entries, "current_path": path_req})
-
-# --- GUI ---
+# --- UI ---
 import tkinter as tk
 from PIL import Image, ImageDraw
 from tkinter import filedialog, messagebox, ttk
 
 if platform.system().lower() == "linux":
-    # DO NOT force appindicator, let pystray decide
-    pass
+    os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
 
 try: import pystray
 except: pystray = None
@@ -109,11 +74,8 @@ class FileBrowserApp:
         
         self.root = tk.Tk()
         self.root.title("File Browser Manager")
-        self.root.geometry("640x480")
-        
-        # Start HIDDEN by default as requested
-        self.root.withdraw()
-        
+        self.root.geometry("600x450")
+        self.root.withdraw() # Start hidden
         self.root.protocol("WM_DELETE_WINDOW", self.hide)
         
         self.paths = load_paths()
@@ -122,70 +84,42 @@ class FileBrowserApp:
         self._build_ui()
 
     def _start_server(self):
-        conf = load_runtime_config()
-        self.srv = make_server(conf["host"], conf["port"], app)
+        self.srv = make_server("127.0.0.1", FLASK_PORT, app)
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
 
     def _init_tray(self):
         if not pystray: return
+        # Create a solid, high-contrast icon
         img = Image.new("RGBA", (64, 64), (15, 23, 42, 255))
         d = ImageDraw.Draw(img)
-        d.rounded_rectangle((4, 4, 60, 60), radius=12, fill=(59, 130, 246, 255))
-        d.rectangle((20, 25, 44, 45), fill="white") # folder-ish icon
+        d.rounded_rectangle((4, 4, 60, 60), radius=10, fill=(37, 99, 235, 255)) # Solid Blue
+        d.rectangle((20, 20, 44, 44), fill="white") # White center square
         
         self.tray = pystray.Icon("filebrowser", img, "File Browser", menu=pystray.Menu(
             pystray.MenuItem("Open Manager", self.show, default=True),
             pystray.MenuItem("Exit", self.quit)
         ))
-        threading.Thread(target=self.tray.run, daemon=True).start()
+        # Important: No daemon thread for tray to ensure stability
+        t = threading.Thread(target=self.tray.run)
+        t.start()
 
     def _build_ui(self):
         style = ttk.Style()
         style.configure(".", font=("Nunito", 10))
-        
         main_f = ttk.Frame(self.root, padding=20)
         main_f.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(main_f, text="FileBrowser Manager", font=("Nunito", 16, "bold")).pack(pady=(0, 10), anchor=tk.W)
-
-        # Server Settings
-        config_f = ttk.LabelFrame(main_f, text=" Server Settings ", padding=10)
-        config_f.pack(fill=tk.X, pady=10)
-        conf = load_runtime_config()
-        ttk.Label(config_f, text="Host:").grid(row=0, column=0, padx=5, sticky=tk.W)
-        self.host_var = tk.StringVar(value=conf["host"])
-        ttk.Entry(config_f, textvariable=self.host_var).grid(row=0, column=1, padx=5, sticky=tk.EW)
-        ttk.Label(config_f, text="Port:").grid(row=0, column=2, padx=5, sticky=tk.W)
-        self.port_var = tk.StringVar(value=str(conf["port"]))
-        ttk.Entry(config_f, textvariable=self.port_var, width=8).grid(row=0, column=3, padx=5, sticky=tk.W)
-        ttk.Button(config_f, text="Save", command=self.save_conf).grid(row=0, column=4, padx=5)
-        config_f.columnconfigure(1, weight=1)
-
-        # Paths
-        path_f = ttk.LabelFrame(main_f, text=" Shared Folders ", padding=10)
-        path_f.pack(fill=tk.BOTH, expand=True)
-        self.lb = tk.Listbox(path_f, font=("Nunito", 10), border=0, highlightthickness=1)
-        self.lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        sb = ttk.Scrollbar(path_f, command=self.lb.yview)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self.lb.config(yscrollcommand=sb.set)
+        ttk.Label(main_f, text="FileBrowser Manager", font=("Nunito", 16, "bold")).pack(pady=10, anchor=tk.W)
         
-        self.refresh_list()
-
+        # Path List
+        self.lb = tk.Listbox(main_f, font=("Nunito", 10))
+        self.lb.pack(fill=tk.BOTH, expand=True)
+        for r in self.paths: self.lb.insert(tk.END, f"{r['label']} -> {r['path']}")
+        
         btn_f = ttk.Frame(main_f)
-        btn_f.pack(fill=tk.X, pady=(10, 0))
+        btn_f.pack(fill=tk.X, pady=10)
         ttk.Button(btn_f, text="Add Folder", command=self.add_dir).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_f, text="Remove", command=self.remove_dir).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_f, text="Hide to Tray", command=self.hide).pack(side=tk.RIGHT, padx=2)
         ttk.Button(btn_f, text="Exit", command=self.quit).pack(side=tk.RIGHT, padx=2)
-
-    def save_conf(self):
-        save_runtime_config(self.host_var.get(), int(self.port_var.get()))
-        messagebox.showinfo("Saved", "Settings saved. Restart to apply.")
-
-    def refresh_list(self):
-        self.lb.delete(0, tk.END)
-        for r in self.paths: self.lb.insert(tk.END, f"{r['label']} -> {r['path']}")
 
     def add_dir(self):
         d = filedialog.askdirectory()
@@ -193,14 +127,7 @@ class FileBrowserApp:
             p = str(Path(d).resolve())
             self.paths.append({"id": f"id_{int(time.time())}", "label": Path(p).name, "path": p})
             save_paths(self.paths)
-            self.refresh_list()
-
-    def remove_dir(self):
-        sel = self.lb.curselection()
-        if sel:
-            self.paths = [r for i, r in enumerate(self.paths) if i not in sel]
-            save_paths(self.paths)
-            self.refresh_list()
+            self.lb.insert(tk.END, f"{self.paths[-1]['label']} -> {p}")
 
     def show(self, *_): self.root.after(0, lambda: (self.root.deiconify(), self.root.lift(), self.root.focus_force()))
     def hide(self, *_): self.root.withdraw()
