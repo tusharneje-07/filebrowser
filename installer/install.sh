@@ -24,20 +24,31 @@ else
 fi
 
 echo -e "${BLUE}==>${NC} Setting up Python environment..."
-python3 -m venv "$INSTALL_DIR/venv"
+# Check for existing venv or create
+if [ ! -d "$INSTALL_DIR/venv" ]; then
+    python3 -m venv "$INSTALL_DIR/venv"
+fi
 "$INSTALL_DIR/venv/bin/pip" install --upgrade pip
 "$INSTALL_DIR/venv/bin/pip" install flask werkzeug Pillow pystray
 
 echo -e "${BLUE}==>${NC} Creating executable..."
+# This version ensures the script runs with the USER'S full environment
 cat <<EOF2 > "$BIN_DIR/$APP_NAME"
-#!/bin/bash
-# Passing environment variables explicitly to ensure the GUI finds the display and session
-export DISPLAY="\${DISPLAY:-:0}"
-export XAUTHORITY="\${XAUTHORITY:-\$HOME/.Xauthority}"
-export DBUS_SESSION_BUS_ADDRESS="\${DBUS_SESSION_BUS_ADDRESS}"
+#!/usr/bin/env bash
+# FileBrowser Command Wrapper
 
+# Sync environment if running from a script/hook
+if [ -z "\$DBUS_SESSION_BUS_ADDRESS" ]; then
+    # Attempt to find the session bus if not set
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/\$(id -u)/bus"
+fi
+
+# Ensure we are in the right directory
 cd "$INSTALL_DIR"
-exec "$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@"
+
+# Launch the application
+# We use the full path to the venv python to ensure correct library loading
+"$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@"
 EOF2
 chmod +x "$BIN_DIR/$APP_NAME"
 
