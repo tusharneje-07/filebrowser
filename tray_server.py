@@ -37,19 +37,23 @@ def cleanup():
         if platform.system() != "Windows":
             # Kill processes on both ports
             cmd = f"lsof -t -i:{PORT},:{LOCK_PORT}"
-            pids = (
-                subprocess.check_output(cmd.split(), stderr=subprocess.DEVNULL)
-                .decode()
-                .split()
-            )
-            for pid in pids:
-                if int(pid) != os.getpid():
-                    os.kill(int(pid), signal.SIGKILL)
+            try:
+                pids = (
+                    subprocess.check_output(cmd.split(), stderr=subprocess.DEVNULL)
+                    .decode()
+                    .split()
+                )
+                for pid in pids:
+                    if int(pid) != os.getpid():
+                        print(f"Killing existing process {pid}")
+                        os.kill(int(pid), signal.SIGKILL)
+            except subprocess.CalledProcessError:
+                pass  # No processes found
         else:
             # Simple Windows port clear (netstat + taskkill if needed)
             pass
-    except:
-        pass
+    except Exception as e:
+        print(f"Cleanup error: {e}")
 
 
 # --- Server Logic ---
@@ -193,10 +197,16 @@ def uninstall():
 
 # --- GUI / Tray ---
 def create_image():
-    image = Image.new("RGBA", (64, 64), (255, 255, 255, 0))
+    # Final polished icon with transparency
+    image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     dc = ImageDraw.Draw(image)
+    # Background circle
     dc.ellipse((4, 4, 60, 60), fill=(37, 99, 235))
-    dc.rectangle((20, 20, 44, 44), fill="white")
+    # Inner document shape
+    dc.rectangle((18, 18, 46, 46), fill="white")
+    # Small blue lines to simulate text/folder
+    dc.line((24, 28, 40, 28), fill=(37, 99, 235), width=2)
+    dc.line((24, 34, 40, 34), fill=(37, 99, 235), width=2)
     return image
 
 
@@ -227,6 +237,7 @@ class App:
                 ),
             )
             self.icon.run()
+
         else:
             print("pystray not found, running in headless mode.")
             while True:
