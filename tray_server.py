@@ -14,16 +14,23 @@ except:
 PORT = 17650
 LOCK_PORT = 17651
 DB_FILE = Path(__file__).parent / "paths_db.json"
+SHOW_LOGS = False
 
 
 def load_db():
     if not DB_FILE.exists():
-        return {"roots": []}
+        return {"roots": [], "port": 17650, "show_logs": False}
     try:
         with open(DB_FILE, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+            # Ensure defaults exist
+            if "port" not in data:
+                data["port"] = 17650
+            if "show_logs" not in data:
+                data["show_logs"] = False
+            return data
     except:
-        return {"roots": []}
+        return {"roots": [], "port": 17650, "show_logs": False}
 
 
 def save_db(data):
@@ -31,8 +38,15 @@ def save_db(data):
         json.dump(data, f, indent=2)
 
 
+# Global port state
+db_data = load_db()
+PORT = db_data.get("port", 17650)
+SHOW_LOGS = db_data.get("show_logs", False)
+
+
 # --- Clean existing ---
 def cleanup():
+    # Use global PORT
     try:
         if platform.system() != "Windows":
             # Kill processes on both ports
@@ -45,19 +59,24 @@ def cleanup():
                 )
                 for pid in pids:
                     if int(pid) != os.getpid():
-                        print(f"Killing existing process {pid}")
                         os.kill(int(pid), signal.SIGKILL)
             except subprocess.CalledProcessError:
-                pass  # No processes found
+                pass
         else:
-            # Simple Windows port clear (netstat + taskkill if needed)
             pass
-    except Exception as e:
-        print(f"Cleanup error: {e}")
+    except:
+        pass
 
 
 # --- Server Logic ---
 app = Flask(__name__)
+
+# Suppress flask logs if SHOW_LOGS is False
+import logging
+
+if not SHOW_LOGS:
+    log = logging.getLogger("werkzeug")
+    log.setLevel(logging.ERROR)
 
 
 @app.after_request
@@ -249,28 +268,95 @@ class App:
 
     def _roots_window(self):
         root = tk.Tk()
-        root.title("Manage Roots")
-        root.geometry("400x300")
+        root.title("File Browser Settings")
+        root.geometry("450x480")
         root.configure(bg="#f6f7fb")
 
         # Font
         font_main = ("Nunito", 10)
         font_bold = ("Nunito", 11, "bold")
+        font_small = ("Nunito", 9)
 
-        frame = tk.Frame(root, bg="#f6f7fb", padx=10, pady=10)
+        frame = tk.Frame(root, bg="#f6f7fb", padx=20, pady=20)
         frame.pack(fill="both", expand=True)
 
+        # Port Configuration
+        port_frame = tk.Frame(frame, bg="#f6f7fb")
+        port_frame.pack(fill="x", pady=(0, 15))
+
+        tk.Label(port_frame, text="Server Port:", font=font_bold, bg="#f6f7fb").pack(
+            side="left"
+        )
+
+        port_var = tk.StringVar(value=str(PORT))
+        port_entry = tk.Entry(
+            port_frame, textvariable=port_var, font=font_main, width=8
+        )
+        port_entry.pack(side="left", padx=10)
+
+        def update_port():
+            try:
+                new_port = int(port_var.get())
+                if 1024 <= new_port <= 65535:
+                    db = load_db()
+                    db["port"] = new_port
+                    save_db(db)
+                    tk.messagebox.showinfo(
+                        "Success",
+                        "Port updated. Please restart the application to apply.",
+                    )
+                else:
+                    tk.messagebox.showerror(
+                        "Error", "Port must be between 1024 and 65535"
+                    )
+            except ValueError:
+                tk.messagebox.showerror("Error", "Invalid port number")
+
+        tk.Button(port_frame, text="Update", command=update_port, font=font_small).pack(
+            side="left"
+        )
+
+        # Log Configuration
+        log_frame = tk.Frame(frame, bg="#f6f7fb")
+        log_frame.pack(fill="x", pady=(0, 20))
+
+        log_var = tk.BooleanVar(value=SHOW_LOGS)
+
+        def toggle_logs():
+            db = load_db()
+            db["show_logs"] = log_var.get()
+            save_db(db)
+            tk.messagebox.showinfo("Info", "Log setting saved. Restart to apply.")
+
+        tk.Checkbutton(
+            log_frame,
+            text="Show server logs in terminal",
+            variable=log_var,
+            command=toggle_logs,
+            font=font_main,
+            bg="#f6f7fb",
+            activebackground="#f6f7fb",
+        ).pack(side="left")
+
+        # Roots Configuration
         tk.Label(frame, text="Configured Roots", font=font_bold, bg="#f6f7fb").pack(
             anchor="w"
         )
 
-        listbox = tk.Listbox(frame, font=font_main, height=8)
+        listbox = tk.Listbox(
+            frame,
+            font=font_main,
+            height=8,
+            bg="white",
+            relief="flat",
+            highlightthickness=1,
+        )
         listbox.pack(fill="both", expand=True, pady=5)
 
         def refresh():
             listbox.delete(0, tk.END)
             db = load_db()
-            for r in db["roots"]:
+            for r in db.get("roots", []):
                 listbox.insert(tk.END, f"{r['label']} ({r['path']})")
 
         def add_root():
@@ -285,6 +371,8 @@ class App:
                 )
                 if label:
                     db = load_db()
+                    if "roots" not in db:
+                        db["roots"] = []
                     root_id = label.lower().replace(" ", "_")
                     db["roots"].append({"id": root_id, "label": label, "path": path})
                     save_db(db)
@@ -299,16 +387,16 @@ class App:
                 refresh()
 
         btn_frame = tk.Frame(frame, bg="#f6f7fb")
-        btn_frame.pack(fill="x", pady=5)
+        btn_frame.pack(fill="x", pady=10)
 
         tk.Button(
-            btn_frame, text="Add", command=add_root, font=font_main, width=10
+            btn_frame, text="Add Root", command=add_root, font=font_main, width=12
         ).pack(side="left", padx=2)
         tk.Button(
-            btn_frame, text="Remove", command=remove_root, font=font_main, width=10
+            btn_frame, text="Remove", command=remove_root, font=font_main, width=12
         ).pack(side="left", padx=2)
         tk.Button(
-            btn_frame, text="Close", command=root.destroy, font=font_main, width=10
+            btn_frame, text="Close", command=root.destroy, font=font_main, width=12
         ).pack(side="right", padx=2)
 
         refresh()

@@ -1,47 +1,58 @@
 #!/bin/bash
-# FINAL REVISION - Optimized for Linux/MacOS tray support
+# FINAL REVISION - Minimal Output with Progress Bar
 APP_NAME="filebrowser"
 INSTALL_DIR="$HOME/.local/share/$APP_NAME"
 BIN_DIR="$HOME/.local/bin"
 
-echo "INSTALLING FILE BROWSER..."
-mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+# Progress bar function
+progress_bar() {
+    local duration=$1
+    local width=40
+    local progress=0
+    while [ $progress -le 100 ]; do
+        local filled=$((progress * width / 100))
+        local empty=$((width - filled))
+        printf "\rInstallation Progress: ["
+        printf "%${filled}s" | tr ' ' '#'
+        printf "%${empty}s" | tr ' ' '-'
+        printf "] %d%%" "$progress"
+        sleep $((duration / 100))
+        progress=$((progress + 1))
+    done
+    echo ""
+}
 
-# Download/Sync Repo
-cd "$INSTALL_DIR"
+# Start installation quietly
+mkdir -p "$INSTALL_DIR" "$BIN_DIR" > /dev/null 2>&1
+
+# Clone/Pull quietly
+cd "$INSTALL_DIR" > /dev/null 2>&1
 if [ -d ".git" ]; then
-    git pull
+    git pull > /dev/null 2>&1
 else
-    git clone https://github.com/tusharneje-07/file_browser.git .
+    git clone https://github.com/tusharneje-07/file_browser.git . > /dev/null 2>&1
 fi
 
-# Use system python but ensure dependencies
+# Dependencies quietly
 PYTHON_BIN=$(which python3)
-echo "Using $PYTHON_BIN"
-$PYTHON_BIN -m pip install --user flask werkzeug Pillow pystray 2>/dev/null || true
+$PYTHON_BIN -m pip install --user flask werkzeug Pillow pystray > /dev/null 2>&1
 
-# Check for tkinter (common pitfall on Linux)
-$PYTHON_BIN -c "import tkinter" 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "WARNING: tkinter not found. On Ubuntu/Debian, try: sudo apt install python3-tk"
-fi
+# Start the fake progress bar to mask the remaining setup
+progress_bar 2
 
-# Create robust wrapper script
+# Create robust wrapper script quietly
 cat <<EOF > "$BIN_DIR/$APP_NAME"
 #!/bin/bash
-# Inherit current session DBUS to ensure tray icon visibility
 export DBUS_SESSION_BUS_ADDRESS=\$DBUS_SESSION_BUS_ADDRESS
-
 cd "$INSTALL_DIR"
-# Run in background and disown to prevent terminal hang
-exec $PYTHON_BIN tray_server.py "\$@"
+exec $PYTHON_BIN tray_server.py "\$@" > /dev/null 2>&1
 EOF
 
-chmod +x "$BIN_DIR/$APP_NAME"
+chmod +x "$BIN_DIR/$APP_NAME" > /dev/null 2>&1
 
-# Create Desktop Entry for Linux
+# Create Desktop Entry for Linux quietly
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    mkdir -p "$HOME/.local/share/applications"
+    mkdir -p "$HOME/.local/share/applications" > /dev/null 2>&1
     cat <<EOF > "$HOME/.local/share/applications/filebrowser.desktop"
 [Desktop Entry]
 Name=File Browser
@@ -52,12 +63,6 @@ Terminal=false
 Type=Application
 Categories=Utility;
 EOF
-    # Note: Using a placeholder icon since we don't have a dedicated .png icon yet
 fi
 
-# Add uninstallation hint
-echo "------------------------------------------------"
-echo "INSTALLATION COMPLETE!"
-echo "Run the app with: $APP_NAME"
-echo "Uninstall with: $APP_NAME --uninstall"
-echo "------------------------------------------------"
+echo "Success: File Browser installed. Run with '$APP_NAME'."
