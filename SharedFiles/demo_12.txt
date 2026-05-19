@@ -1,3 +1,0 @@
-Demo file 12
-If an uploaded file name already exists,
-the server adds a numeric suffix automatically.

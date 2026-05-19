@@ -1,3 +1,0 @@
-Demo file 06
-File server endpoint: GET /api/preview?path=<filename>
-It returns the content for a selected file.

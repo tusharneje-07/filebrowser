@@ -1,3 +1,0 @@
-Demo file 03
-The copy path button copies the absolute server path.
-You can paste it anywhere to verify the behavior.

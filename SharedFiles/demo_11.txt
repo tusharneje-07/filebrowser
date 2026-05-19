@@ -1,3 +1,0 @@
-Demo file 11
-Files are sorted alphabetically in the list.
-This keeps navigation predictable in bigger folders.

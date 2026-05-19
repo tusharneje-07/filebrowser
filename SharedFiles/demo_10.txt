@@ -1,3 +1,0 @@
-Demo file 10
-The status line in the panel shows progress and errors.
-This helps with debugging server connectivity issues.

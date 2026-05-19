@@ -1,3 +1,0 @@
-Demo file 16
-Try uploading this file back into the folder.
-You should see a renamed duplicate appear.

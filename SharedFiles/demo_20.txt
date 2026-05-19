@@ -1,3 +1,0 @@
-Demo file 20
-End of the demo file set.
-You now have 20 text files in SharedFiles.

@@ -1,3 +1,0 @@
-Demo file 01
-This is sample content for File Browser.
-Use this file to test listing and preview.

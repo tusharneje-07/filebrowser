@@ -1,3 +1,0 @@
-Demo file 17
-The refresh button forces a new list fetch.
-Useful after editing files outside the extension.

@@ -1,3 +1,0 @@
-Demo file 14
-The UI uses a lightweight split layout:
-file list on top and preview area below.

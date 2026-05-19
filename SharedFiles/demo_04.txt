@@ -1,3 +1,0 @@
-Demo file 04
-Preview mode reads file text using UTF-8 with safe fallback.
-Non UTF content is shown with replacement characters.

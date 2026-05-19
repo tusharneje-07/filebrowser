@@ -1,3 +1,0 @@
-Demo file 05
-File server endpoint: GET /api/files
-It returns metadata like name, size, path, and modified time.
