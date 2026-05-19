@@ -1,33 +1,33 @@
 # Filebrowser
 
-Filebrowser is a high-performance, cross-platform local file server designed to bridge the gap between your local filesystem and web-based workflows. It provides a robust backend to serve local files via a RESTful API, managed through a system tray application and consumed by a specialized Chrome extension.
+Filebrowser is a specialized workflow tool designed to simplify the process of uploading and previewing local files directly within the web browser. It eliminates the need to switch between application windows or navigate complex directory structures in traditional file pickers.
 
-## Technical Architecture
+## Motivation and Purpose
 
-The application is built on a decoupled architecture consisting of three primary components:
+This application was developed to solve two primary friction points in modern web workflows:
 
-### 1. Backend Server (Python/Flask)
-- **Core Engine**: A lightweight Flask-based REST API running on a user-configurable port (default 17650).
-- **Process Management**: Implements single-instance enforcement using TCP socket locking (port 17651) and automated cleanup of orphaned processes.
-- **API Endpoints**:
-    - `/api/roots`: Returns configured filesystem entry points.
-    - `/api/browse`: Hierarchical directory traversal with security-validated path resolution.
-    - `/api/preview`: Optimized text stream preview (10KB chunks).
-    - `/api/download`: Direct binary stream delivery for images, PDFs, and general files.
+1.  **Window Switching Inefficiency**: For users who prefer working in full-screen mode, switching to a file manager to drag and drop files is disruptive. Filebrowser integrates a file manager directly into the browser sidepanel, allowing for seamless drag-and-drop operations without ever leaving the active window.
+2.  **Lack of File Previews**: Standard file pickers often fail to provide content previews for text-based formats or PDFs. This forces users to manually open files in external applications to verify their contents before uploading. Filebrowser provides instant, integrated previews for a wide variety of file types (Images, PDFs, and Text-based code/data files) directly within the browser interface.
 
-### 2. Desktop Interface (Tkinter/Pystray)
-- **Tray Manager**: Native system tray integration for background persistence and quick access.
-- **Settings GUI**: A Tkinter-based configuration interface utilizing the Nunito typography for managing file roots and server parameters.
-- **Persistence**: User configuration is stored in the standard XDG configuration path (`~/.config/filebrowser/`) to ensure settings persist across application updates.
+## System Architecture
 
-### 3. Frontend (Chrome Extension)
-- **Sidepanel UI**: A modern, reactive interface for browsing local files within the browser context.
-- **Bridge Layer**: A content-bridge mechanism that allows dragging and dropping local files directly into web application upload zones.
+The project consists of two integrated components:
+
+### 1. Chrome Extension (Frontend)
+- **Unified UI**: Provides a modern, responsive file management interface within the browser sidepanel.
+- **Instant Preview**: High-performance preview engine for verifying file contents (Images, PDF, Text) before selection.
+- **Upload Integration**: Handles the selection and injection of files into designated web upload zones or active tabs.
+
+### 2. Backend Server (Flask & Tkinter)
+- **File Service**: A Flask-based server that serves local filesystem content through a secure REST API.
+- **Root-Based Security**: The server only exposes files within user-defined "Root Paths" (e.g., specific projects, Volume D, or Volume E).
+- **Configuration Interface**: A Tkinter-wrapped management tool for configuring root paths and custom server ports.
+- **Persistence**: User settings and root configurations are stored in the local application data directory to ensure they remain available across updates.
 
 ## Installation
 
 ### Linux and MacOS
-Installation is handled via an automated script that configures the environment, installs dependencies, and creates a desktop entry.
+Installation is handled via an automated script that configures the environment and creates a desktop entry.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/tusharneje-07/filebrowser/main/installer/setup.sh | bash
@@ -40,15 +40,12 @@ Execute the following in an Administrative PowerShell session:
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/tusharneje-07/filebrowser/main/installer/install.ps1'))
 ```
 
-## System Requirements
-- Python 3.8+
-- Flask, Werkzeug, Pillow, Pystray
-- (Linux) libayatana-appindicator or libappindicator-gtk3
+## Technical Details
 
-## Commands
-- `filebrowser`: Initialize the background server and tray icon.
-- `filebrowser uninstall`: Complete system cleanup (removes binary and desktop entries while preserving user configuration in `.config`).
+- **Server Port**: Defaults to 17650 (configurable via settings).
+- **Process Management**: Automatically handles port conflicts and enforces a single-instance execution model.
+- **Data Storage**: Configuration is managed at `~/.config/filebrowser/paths_db.json` on Unix systems and the equivalent AppData path on Windows.
 
-## Configuration Paths
-- Linux/MacOS: `~/.config/filebrowser/paths_db.json`
-- Windows: `%LOCALAPPDATA%\filebrowser\paths_db.json`
+## Usage
+- `filebrowser`: Launches the background server and management interface.
+- `filebrowser uninstall`: Removes the application binary and system shortcuts while preserving your root path configurations.
