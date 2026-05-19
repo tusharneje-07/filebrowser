@@ -24,7 +24,6 @@ RUNTIME_CONFIG_FILE = BASE_DIR / "runtime_config.json"
 FLASK_PORT = 17650
 LOCK_PORT = 17651 
 
-# --- Helper Functions ---
 def get_pids_for_port(port):
     pids = set()
     try:
@@ -65,7 +64,6 @@ def acquire_lock():
         return True
     except socket.error: return False
 
-# --- Runtime & Paths Management ---
 def load_runtime_config() -> dict:
     if not RUNTIME_CONFIG_FILE.exists():
         return {"host": "127.0.0.1", "port": FLASK_PORT}
@@ -89,9 +87,8 @@ def save_paths(roots: list[dict]):
     PATHS_DB_FILE.write_text(json.dumps({"roots": roots}, indent=2))
 
 # --- Flask App ---
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 from werkzeug.serving import make_server
-from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -106,39 +103,17 @@ def health(): return jsonify({"status": "ok"})
 @app.route("/api/roots")
 def list_roots(): return jsonify({"roots": load_paths()})
 
-@app.route("/api/browse")
-def browse_files():
-    root_id = request.args.get("root", "root")
-    current_rel = request.args.get("path", "").strip("/")
-    roots = load_paths()
-    root = next((r for r in roots if r["id"] == root_id), None)
-    if not root: return jsonify({"error": "Invalid root"}), 400
-    
-    base_path = Path(root["path"])
-    target_dir = (base_path / current_rel).resolve()
-    if not str(target_dir).startswith(str(base_path.resolve())):
-        return jsonify({"error": "Forbidden"}), 403
-    
-    entries = []
-    if target_dir.exists() and target_dir.is_dir():
-        for item in sorted(target_dir.iterdir(), key=lambda x: (x.is_file(), x.name.lower())):
-            stat = item.stat()
-            entries.append({
-                "name": item.name,
-                "type": "directory" if item.is_dir() else "file",
-                "relative_path": str(item.relative_to(base_path)).replace("\\", "/"),
-                "size": 0 if item.is_dir() else stat.st_size,
-                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
-            })
-    return jsonify({"entries": entries, "current_path": current_rel})
-
 # --- GUI Application ---
 import tkinter as tk
 from PIL import Image, ImageDraw
 from tkinter import filedialog, messagebox, ttk
 
+# Platform Fixes for Tray
 if platform.system().lower() == "linux":
+    # On many Linux distros (Fedora/Ubuntu), pystray needs this environment variable
+    # to find the correct system tray backend.
     os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
+
 try: import pystray
 except ImportError: pystray = None
 
@@ -150,7 +125,12 @@ class FileBrowserApp:
         self.root = tk.Tk()
         self.root.title("File Browser Manager")
         self.root.geometry("640x480")
-        self.root.withdraw()
+        
+        # We start with the window visible if it's the first run, 
+        # or we can hide it. Let's start VISIBLE for now to ensure 
+        # the user sees it's working, then they can hide it.
+        # self.root.withdraw() 
+        
         self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
         
         self.paths = load_paths()
@@ -170,11 +150,9 @@ class FileBrowserApp:
         main_f = ttk.Frame(self.root, padding=20)
         main_f.pack(fill=tk.BOTH, expand=True)
 
-        # Header
         header = ttk.Label(main_f, text="FileBrowser Server Manager", font=("Nunito", 16, "bold"))
         header.pack(pady=(0, 10), anchor=tk.W)
 
-        # Runtime Config
         config_f = ttk.LabelFrame(main_f, text=" Server Settings ", padding=10)
         config_f.pack(fill=tk.X, pady=10)
         
@@ -190,7 +168,6 @@ class FileBrowserApp:
         ttk.Button(config_f, text="Save & Restart", command=self.update_server).grid(row=0, column=4, padx=5)
         config_f.columnconfigure(1, weight=1)
 
-        # Path Management
         path_f = ttk.LabelFrame(main_f, text=" Shared Directories ", padding=10)
         path_f.pack(fill=tk.BOTH, expand=True)
         
@@ -235,13 +212,16 @@ class FileBrowserApp:
 
     def _init_tray(self):
         if pystray:
-            img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+            img = Image.new("RGBA", (64, 64), (15, 23, 42, 255))
             d = ImageDraw.Draw(img)
             d.rounded_rectangle((4, 4, 60, 60), radius=12, fill=(59, 130, 246))
+            
+            # Start pystray in its own thread
             self.tray = pystray.Icon("filebrowser", img, "FileBrowser", menu=pystray.Menu(
                 pystray.MenuItem("Open Manager", self.show_window, default=True),
                 pystray.MenuItem("Exit", self.quit_app)
             ))
+            # Critical: pystray's run() can block if not in a daemon thread correctly on some systems
             threading.Thread(target=self.tray.run, daemon=True).start()
 
     def show_window(self, *_): self.root.after(0, lambda: (self.root.deiconify(), self.root.lift(), self.root.focus_force()))

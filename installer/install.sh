@@ -31,8 +31,9 @@ python3 -m venv "$INSTALL_DIR/venv"
 echo -e "${BLUE}==>${NC} Creating executable..."
 cat <<EOF2 > "$BIN_DIR/$APP_NAME"
 #!/bin/bash
-nohup "$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@" > /dev/null 2>&1 &
-echo "FileBrowser started in background."
+# Running as a foreground process to ensure the GUI/Tray can initialize correctly
+# Users can hide it to the tray once it starts.
+"$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@"
 EOF2
 chmod +x "$BIN_DIR/$APP_NAME"
 
