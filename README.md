@@ -52,6 +52,31 @@ Alternatively, use the GitHub direct link:
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/tusharneje-07/filebrowser/main/installer/install.ps1'))
 ```
 
+## Usage Guide
+
+### 1. Launch the Backend
+Run the following command in your terminal to start the background server and configuration interface:
+```bash
+filebrowser
+```
+Right-click the management icon in your taskbar to open **File Browser Settings**. Here you must:
+- **Add Root Paths**: Add the folders you want to access (e.g., your Downloads folder or an entire Drive).
+- **Configure Port**: Ensure the port matches the one set in the Chrome Extension (default is 17650).
+
+### 2. Setting Up the Chrome Extension
+Since the extension is currently in developer mode:
+1. Open Chrome and go to `chrome://extensions/`.
+2. Turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select the `chrome_extension` folder from this project.
+4. Click the **Extensions puzzle icon** in Chrome and pin **File Browser**.
+
+### 3. Integrated Workflow
+Once both parts are running:
+- **Open the Sidepanel**: Click the File Browser extension icon to open the file manager in your browser's sidepanel.
+- **Browse & Preview**: Click on folders to navigate and click on files (Images, PDFs, Text) to see an instant preview at the bottom.
+- **Drag and Drop**: Simply drag a file from the extension sidepanel directly onto any website's upload area.
+- **Send to Site**: Alternatively, click the **"Send to site"** button on any file card to automatically inject it into the active page's upload field.
+
 ## Technical Details
 
 - **Server Port**: Defaults to 17650 (configurable via settings).
