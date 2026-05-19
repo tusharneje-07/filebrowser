@@ -25,19 +25,20 @@ FLASK_PORT = 17650
 LOCK_PORT = 17651 
 
 def get_pids_for_port(port):
-    """Finds all PIDs associated with a specific port."""
+    """Finds all PIDs associated with a specific port using lsof or netstat."""
     pids = set()
     try:
         if platform.system() == "Windows":
+            # Using findstr to get the PID column from netstat
             output = subprocess.check_output(f'netstat -ano | findstr :{port}', shell=True).decode()
             for line in output.splitlines():
-                if "LISTENING" in line or "ESTABLISHED" in line:
+                if "LISTENING" in line:
                     parts = line.strip().split()
                     if parts:
                         pids.add(int(parts[-1]))
         else: # Linux/Mac
-            # lsof -t is very reliable for returning just the PIDs
-            output = subprocess.check_output(f'lsof -i tcp:{port} -t', shell=True).decode()
+            # lsof -t is specific and fast
+            output = subprocess.check_output(['lsof', '-t', f'-i:{port}'], stderr=subprocess.DEVNULL).decode()
             for line in output.splitlines():
                 if line.strip():
                     pids.add(int(line.strip()))
@@ -46,25 +47,30 @@ def get_pids_for_port(port):
     return pids
 
 def kill_existing_instance():
-    """Kills any process holding either the Flask port or the Lock port."""
-    all_pids = get_pids_for_port(FLASK_PORT) | get_pids_for_port(LOCK_PORT)
+    """Nuclear kill of anything on our ports."""
     my_pid = os.getpid()
-    
-    targets = [p for p in all_pids if p != my_pid]
+    # Check both ports
+    targets = (get_pids_for_port(FLASK_PORT) | get_pids_for_port(LOCK_PORT)) - {my_pid}
     
     if targets:
-        print(f"Cleaning up existing instances (PIDs: {targets})...")
+        print(f"Cleaning up existing instances (PIDs: {list(targets)})...")
         for pid in targets:
             try:
                 if platform.system() == "Windows":
                     subprocess.run(['taskkill', '/F', '/PID', str(pid)], capture_output=True)
                 else:
-                    os.kill(pid, signal.SIGKILL) # SIGKILL to be absolutely sure
+                    os.kill(pid, signal.SIGKILL)
             except Exception:
                 pass
         
-        # Give the OS a moment to actually free the ports
-        time.sleep(1.5)
+        # ESSENTIAL: Wait for the OS to release the socket
+        # If we don't wait, bind() will fail with "Address already in use"
+        retries = 10
+        while retries > 0:
+            if not (get_pids_for_port(FLASK_PORT) | get_pids_for_port(LOCK_PORT)) - {my_pid}:
+                break
+            time.sleep(0.5)
+            retries -= 1
 
 # --- Global Lock Socket ---
 lock_socket = None
@@ -73,7 +79,7 @@ def acquire_lock():
     global lock_socket
     try:
         lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # Set SO_REUSEADDR so we can re-bind immediately after a kill
+        # SO_REUSEADDR allows us to take the port even if it's in TIME_WAIT
         lock_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lock_socket.bind(('127.0.0.1', LOCK_PORT))
         lock_socket.listen(1)
@@ -112,43 +118,55 @@ def health(): return jsonify({"status": "ok"})
 class FileBrowserApp:
     def __init__(self):
         kill_existing_instance()
-        if not acquire_lock():
-            print(f"CRITICAL: Could not acquire lock port {LOCK_PORT} even after cleanup.")
+        
+        # Try to acquire lock with retries
+        locked = False
+        for _ in range(5):
+            if acquire_lock():
+                locked = True
+                break
+            time.sleep(1)
+            
+        if not locked:
+            print(f"CRITICAL: Port {LOCK_PORT} is still blocked. Use 'fuser -k {LOCK_PORT}/tcp' manually.")
             sys.exit(1)
 
         self.root = tk.Tk()
         self.root.title("File Browser")
         self.root.geometry("450x300")
-        
-        # Proper window behavior
         self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
         
-        # Start Flask
         self._start_server()
-        
         self._build_ui()
         self._init_tray()
 
     def _start_server(self):
         try:
-            self.srv = make_server("127.0.0.1", FLASK_PORT, app)
-            threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+            # Try to start server with retries
+            started = False
+            for _ in range(5):
+                try:
+                    self.srv = make_server("127.0.0.1", FLASK_PORT, app)
+                    threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+                    started = True
+                    break
+                except socket.error:
+                    time.sleep(1)
+            
+            if not started:
+                print(f"CRITICAL: Flask Port {FLASK_PORT} is still blocked.")
+                sys.exit(1)
         except Exception as e:
             print(f"Flask start failed: {e}")
-            messagebox.showerror("Server Error", f"Could not start server on port {FLASK_PORT}.\n{e}")
-            self.quit_app()
+            sys.exit(1)
 
     def _build_ui(self):
-        try:
-            self.root.option_add("*Font", "Nunito 10")
+        try: self.root.option_add("*Font", "Nunito 10")
         except: pass
-        
         f = ttk.Frame(self.root, padding=30)
         f.pack(fill=tk.BOTH, expand=True)
-        
         ttk.Label(f, text="FileBrowser Server", font=("Nunito", 16, "bold")).pack(pady=(0, 10))
         ttk.Label(f, text=f"Active at http://127.0.0.1:{FLASK_PORT}", foreground="#22c55e").pack(pady=5)
-        
         btn_f = ttk.Frame(f)
         btn_f.pack(pady=20)
         ttk.Button(btn_f, text="Hide to Tray", command=self.hide_to_tray).pack(side=tk.LEFT, padx=5)
@@ -171,8 +189,7 @@ class FileBrowserApp:
     def show_window(self, *_):
         self.root.after(0, lambda: (self.root.deiconify(), self.root.lift()))
 
-    def hide_to_tray(self):
-        self.root.withdraw()
+    def hide_to_tray(self): self.root.withdraw()
 
     def quit_app(self, *_):
         if hasattr(self, 'srv'): self.srv.shutdown()
