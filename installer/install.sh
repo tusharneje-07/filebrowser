@@ -27,8 +27,9 @@ mkdir -p "$INSTALL_DIR" "$BIN_DIR" > /dev/null 2>&1
 
 # Download necessary files using curl (no git dependency)
 cd "$INSTALL_DIR" > /dev/null 2>&1
-BASE_URL="https://raw.githubusercontent.com/tusharneje-07/file_browser/main"
+BASE_URL="https://raw.githubusercontent.com/tusharneje-07/filebrowser/main"
 curl -fsSL "$BASE_URL/tray_server.py" -o tray_server.py > /dev/null 2>&1
+curl -fsSL "$BASE_URL/icon.png" -o icon.png > /dev/null 2>&1
 # Note: paths_db.json is now managed in ~/.config/filebrowser/ by the app itself
 
 # Dependencies quietly

@@ -245,17 +245,18 @@ def uninstall():
 
 
 # --- GUI / Tray ---
-def create_image():
-    # Final polished icon with transparency
+def get_icon_image():
+    icon_path = Path(__file__).parent / "icon.png"
+    if icon_path.exists():
+        try:
+            return Image.open(icon_path)
+        except:
+            pass
+    # Fallback to generated image
     image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     dc = ImageDraw.Draw(image)
-    # Background circle
     dc.ellipse((4, 4, 60, 60), fill=(37, 99, 235))
-    # Inner document shape
     dc.rectangle((18, 18, 46, 46), fill="white")
-    # Small blue lines to simulate text/folder
-    dc.line((24, 28, 40, 28), fill=(37, 99, 235), width=2)
-    dc.line((24, 34, 40, 34), fill=(37, 99, 235), width=2)
     return image
 
 
@@ -278,10 +279,10 @@ class App:
         if pystray:
             self.icon = pystray.Icon(
                 "filebrowser",
-                create_image(),
+                get_icon_image(),
                 "File Browser",
                 menu=pystray.Menu(
-                    pystray.MenuItem("Manage Roots", self.show_roots),
+                    pystray.MenuItem("File Browser Settings", self.show_roots),
                     pystray.MenuItem("Exit", self.exit_app),
                 ),
             )

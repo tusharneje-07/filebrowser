@@ -1,9 +1,9 @@
 #!/bin/bash
-# Usage: curl -fsSL https://raw.githubusercontent.com/tusharneje-07/file_browser/main/installer/setup.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/tusharneje-07/filebrowser/main/installer/setup.sh | bash
 OS="$(uname)"
 case "$OS" in
     Linux*|Darwin*)
-        bash <(curl -fsSL https://raw.githubusercontent.com/tusharneje-07/file_browser/main/installer/install.sh)
+        bash <(curl -fsSL https://raw.githubusercontent.com/tusharneje-07/filebrowser/main/installer/install.sh)
         ;;
     *)
         echo "Unsupported OS: $OS"
