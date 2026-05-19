@@ -24,6 +24,7 @@ RUNTIME_CONFIG_FILE = BASE_DIR / "runtime_config.json"
 FLASK_PORT = 17650
 LOCK_PORT = 17651 
 
+# --- Helper Functions ---
 def get_pids_for_port(port):
     pids = set()
     try:
@@ -110,8 +111,7 @@ from tkinter import filedialog, messagebox, ttk
 
 # Platform Fixes for Tray
 if platform.system().lower() == "linux":
-    # On many Linux distros (Fedora/Ubuntu), pystray needs this environment variable
-    # to find the correct system tray backend.
+    # TRY ALL BACKENDS if appindicator fails
     os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
 
 try: import pystray
@@ -126,10 +126,8 @@ class FileBrowserApp:
         self.root.title("File Browser Manager")
         self.root.geometry("640x480")
         
-        # We start with the window visible if it's the first run, 
-        # or we can hide it. Let's start VISIBLE for now to ensure 
-        # the user sees it's working, then they can hide it.
-        # self.root.withdraw() 
+        # Withdraw the window so it starts hidden
+        self.root.withdraw()
         
         self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
         
@@ -221,8 +219,10 @@ class FileBrowserApp:
                 pystray.MenuItem("Open Manager", self.show_window, default=True),
                 pystray.MenuItem("Exit", self.quit_app)
             ))
-            # Critical: pystray's run() can block if not in a daemon thread correctly on some systems
-            threading.Thread(target=self.tray.run, daemon=True).start()
+            # Use non-daemon thread for pystray to prevent it from being reaped
+            # but keep a reference to it.
+            self.tray_thread = threading.Thread(target=self.tray.run)
+            self.tray_thread.start()
 
     def show_window(self, *_): self.root.after(0, lambda: (self.root.deiconify(), self.root.lift(), self.root.focus_force()))
     def hide_to_tray(self): self.root.withdraw()
@@ -234,4 +234,10 @@ class FileBrowserApp:
         os._exit(0)
 
 if __name__ == "__main__":
-    FileBrowserApp().root.mainloop()
+    # Ensure a display is available for Tkinter
+    if platform.system() != "Windows" and not os.environ.get("DISPLAY"):
+         print("Error: No display found. This application requires a GUI environment.")
+         sys.exit(1)
+    
+    app_inst = FileBrowserApp()
+    app_inst.root.mainloop()
