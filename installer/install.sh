@@ -17,16 +17,19 @@ else
     git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
+# Create venv with system-site-packages to allow access to system tray libraries (gi, appindicator)
 if [ ! -d "$INSTALL_DIR/venv" ]; then
-    python3 -m venv "$INSTALL_DIR/venv"
+    python3 -m venv --system-site-packages "$INSTALL_DIR/venv"
 fi
+
+# Install pip dependencies
 "$INSTALL_DIR/venv/bin/pip" install flask werkzeug Pillow pystray
 
 cat <<EOF2 > "$BIN_DIR/$APP_NAME"
 #!/usr/bin/env bash
 # FileBrowser Launcher
 cd "$INSTALL_DIR"
-# Use 'exec' to run python directly so it inherits the terminal's environment perfectly
+# Inherit all system environment variables for the tray icon
 exec "$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@"
 EOF2
 chmod +x "$BIN_DIR/$APP_NAME"
