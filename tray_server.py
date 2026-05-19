@@ -25,33 +25,24 @@ FLASK_PORT = 17650
 LOCK_PORT = 17651 
 
 def get_pids_for_port(port):
-    """Finds all PIDs associated with a specific port using lsof or netstat."""
     pids = set()
     try:
         if platform.system() == "Windows":
-            # Using findstr to get the PID column from netstat
             output = subprocess.check_output(f'netstat -ano | findstr :{port}', shell=True).decode()
             for line in output.splitlines():
                 if "LISTENING" in line:
                     parts = line.strip().split()
-                    if parts:
-                        pids.add(int(parts[-1]))
-        else: # Linux/Mac
-            # lsof -t is specific and fast
+                    if parts: pids.add(int(parts[-1]))
+        else:
             output = subprocess.check_output(['lsof', '-t', f'-i:{port}'], stderr=subprocess.DEVNULL).decode()
             for line in output.splitlines():
-                if line.strip():
-                    pids.add(int(line.strip()))
-    except Exception:
-        pass
+                if line.strip(): pids.add(int(line.strip()))
+    except Exception: pass
     return pids
 
 def kill_existing_instance():
-    """Nuclear kill of anything on our ports."""
     my_pid = os.getpid()
-    # Check both ports
     targets = (get_pids_for_port(FLASK_PORT) | get_pids_for_port(LOCK_PORT)) - {my_pid}
-    
     if targets:
         print(f"Cleaning up existing instances (PIDs: {list(targets)})...")
         for pid in targets:
@@ -60,17 +51,8 @@ def kill_existing_instance():
                     subprocess.run(['taskkill', '/F', '/PID', str(pid)], capture_output=True)
                 else:
                     os.kill(pid, signal.SIGKILL)
-            except Exception:
-                pass
-        
-        # ESSENTIAL: Wait for the OS to release the socket
-        # If we don't wait, bind() will fail with "Address already in use"
-        retries = 10
-        while retries > 0:
-            if not (get_pids_for_port(FLASK_PORT) | get_pids_for_port(LOCK_PORT)) - {my_pid}:
-                break
-            time.sleep(0.5)
-            retries -= 1
+            except Exception: pass
+        time.sleep(1)
 
 # --- Global Lock Socket ---
 lock_socket = None
@@ -79,19 +61,16 @@ def acquire_lock():
     global lock_socket
     try:
         lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # SO_REUSEADDR allows us to take the port even if it's in TIME_WAIT
         lock_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lock_socket.bind(('127.0.0.1', LOCK_PORT))
         lock_socket.listen(1)
         return True
-    except socket.error:
-        return False
+    except socket.error: return False
 
 # --- Platform Fixes ---
 if platform.system().lower() == "linux":
     os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
 
-# --- Dependencies ---
 try:
     import pystray
 except ImportError:
@@ -103,7 +82,6 @@ from tkinter import filedialog, messagebox, ttk
 from flask import Flask, jsonify, request
 from werkzeug.serving import make_server
 
-# --- Flask App ---
 app = Flask(__name__)
 
 @app.after_request
@@ -118,22 +96,17 @@ def health(): return jsonify({"status": "ok"})
 class FileBrowserApp:
     def __init__(self):
         kill_existing_instance()
-        
-        # Try to acquire lock with retries
-        locked = False
-        for _ in range(5):
-            if acquire_lock():
-                locked = True
-                break
-            time.sleep(1)
-            
-        if not locked:
-            print(f"CRITICAL: Port {LOCK_PORT} is still blocked. Use 'fuser -k {LOCK_PORT}/tcp' manually.")
+        if not acquire_lock():
+            print(f"CRITICAL: Port {LOCK_PORT} is blocked.")
             sys.exit(1)
 
         self.root = tk.Tk()
         self.root.title("File Browser")
         self.root.geometry("450x300")
+        
+        # Withdraw the window immediately on startup so it starts in tray
+        self.root.withdraw()
+        
         self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
         
         self._start_server()
@@ -141,24 +114,8 @@ class FileBrowserApp:
         self._init_tray()
 
     def _start_server(self):
-        try:
-            # Try to start server with retries
-            started = False
-            for _ in range(5):
-                try:
-                    self.srv = make_server("127.0.0.1", FLASK_PORT, app)
-                    threading.Thread(target=self.srv.serve_forever, daemon=True).start()
-                    started = True
-                    break
-                except socket.error:
-                    time.sleep(1)
-            
-            if not started:
-                print(f"CRITICAL: Flask Port {FLASK_PORT} is still blocked.")
-                sys.exit(1)
-        except Exception as e:
-            print(f"Flask start failed: {e}")
-            sys.exit(1)
+        self.srv = make_server("127.0.0.1", FLASK_PORT, app)
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
 
     def _build_ui(self):
         try: self.root.option_add("*Font", "Nunito 10")
@@ -180,16 +137,28 @@ class FileBrowserApp:
 
     def _init_tray(self):
         if pystray:
+            # We use a non-detached run to keep the process alive without the TK window
             self.tray = pystray.Icon("filebrowser", self._create_icon_img(), "FileBrowser", menu=pystray.Menu(
-                pystray.MenuItem("Open", self.show_window),
+                pystray.MenuItem("Open", self.show_window, default=True),
                 pystray.MenuItem("Exit", self.quit_app)
             ))
+            # Run tray in a separate thread so it doesn't block TK mainloop
             threading.Thread(target=self.tray.run, daemon=True).start()
 
     def show_window(self, *_):
-        self.root.after(0, lambda: (self.root.deiconify(), self.root.lift()))
+        # Force the window to show on top
+        self.root.after(0, self._force_focus)
 
-    def hide_to_tray(self): self.root.withdraw()
+    def _force_focus(self):
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
+        if platform.system() == "Windows":
+            self.root.attributes('-topmost', True)
+            self.root.after(100, lambda: self.root.attributes('-topmost', False))
+
+    def hide_to_tray(self):
+        self.root.withdraw()
 
     def quit_app(self, *_):
         if hasattr(self, 'srv'): self.srv.shutdown()
@@ -203,9 +172,5 @@ if __name__ == "__main__":
         kill_existing_instance()
         print("Uninstalled successfully."); sys.exit(0)
     
-    try:
-        app_inst = FileBrowserApp()
-        app_inst.root.mainloop()
-    except Exception as e:
-        print(f"Application Error: {e}")
-        sys.exit(1)
+    app_inst = FileBrowserApp()
+    app_inst.root.mainloop()
