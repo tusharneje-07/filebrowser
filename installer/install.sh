@@ -31,9 +31,13 @@ python3 -m venv "$INSTALL_DIR/venv"
 echo -e "${BLUE}==>${NC} Creating executable..."
 cat <<EOF2 > "$BIN_DIR/$APP_NAME"
 #!/bin/bash
-# Running as a foreground process to ensure the GUI/Tray can initialize correctly
-# Users can hide it to the tray once it starts.
-"$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@"
+# Passing environment variables explicitly to ensure the GUI finds the display and session
+export DISPLAY="\${DISPLAY:-:0}"
+export XAUTHORITY="\${XAUTHORITY:-\$HOME/.Xauthority}"
+export DBUS_SESSION_BUS_ADDRESS="\${DBUS_SESSION_BUS_ADDRESS}"
+
+cd "$INSTALL_DIR"
+exec "$INSTALL_DIR/venv/bin/python3" "$INSTALL_DIR/tray_server.py" "\$@"
 EOF2
 chmod +x "$BIN_DIR/$APP_NAME"
 
