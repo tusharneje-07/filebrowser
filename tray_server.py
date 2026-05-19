@@ -261,19 +261,28 @@ def get_icon_image():
 
 
 class App:
-    def __init__(self):
+    def __init__(self, show_settings=False):
         # Single Instance Lock
         self.lock_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.lock_sock.bind(("127.0.0.1", LOCK_PORT))
         except:
-            print("Another instance is running. Exiting.")
+            if show_settings:
+                # If already running, we can't easily open the window of the OTHER process
+                # but we can try to notify the user.
+                print("Application is already running.")
+            else:
+                print("Another instance is running. Exiting.")
             sys.exit(0)
 
         cleanup()
 
         # Start Server
         threading.Thread(target=run_server, daemon=True).start()
+
+        if show_settings:
+            # Start the settings window immediately in a thread
+            self.show_roots()
 
         # Tray Icon
         if pystray:
@@ -287,7 +296,6 @@ class App:
                 ),
             )
             self.icon.run()
-
         else:
             print("pystray not found, running in headless mode.")
             while True:
@@ -442,4 +450,6 @@ class App:
 if __name__ == "__main__":
     if "--uninstall" in sys.argv or "uninstall" in sys.argv:
         uninstall()
-    App()
+
+    show_mode = "show" in sys.argv or "--show" in sys.argv
+    App(show_settings=show_mode)

@@ -85,4 +85,5 @@ Once both parts are running:
 
 ## Usage
 - `filebrowser`: Launches the background server and management interface.
+- `filebrowser show`: Launches the application and immediately opens the settings window.
 - `filebrowser uninstall`: Removes the application binary and system shortcuts while preserving your root path configurations.
