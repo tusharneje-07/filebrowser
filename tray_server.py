@@ -24,7 +24,6 @@ RUNTIME_CONFIG_FILE = BASE_DIR / "runtime_config.json"
 FLASK_PORT = 17650
 LOCK_PORT = 17651 
 
-# --- Helper Functions ---
 def get_pids_for_port(port):
     pids = set()
     try:
@@ -111,7 +110,7 @@ from tkinter import filedialog, messagebox, ttk
 
 # Platform Fixes for Tray
 if platform.system().lower() == "linux":
-    # Try to force appindicator on Linux for better tray visibility
+    # Critical for Linux tray icons
     os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
 
 try: import pystray
@@ -126,7 +125,7 @@ class FileBrowserApp:
         self.root.title("File Browser Manager")
         self.root.geometry("640x480")
         
-        # Withdraw immediately for hidden startup
+        # We start WITHDRAWN so it goes straight to tray
         self.root.withdraw()
         
         self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
@@ -210,7 +209,6 @@ class FileBrowserApp:
 
     def _init_tray(self):
         if pystray:
-            # Explicitly create an icon image that is known to work
             img = Image.new("RGBA", (64, 64), (15, 23, 42, 255))
             d = ImageDraw.Draw(img)
             d.rounded_rectangle((4, 4, 60, 60), radius=12, fill=(59, 130, 246, 255))
@@ -219,10 +217,8 @@ class FileBrowserApp:
                 pystray.MenuItem("Open Manager", self.show_window, default=True),
                 pystray.MenuItem("Exit", self.quit_app)
             ))
-            # Start tray in a separate thread
-            self.tray_thread = threading.Thread(target=self.tray.run)
-            self.tray_thread.daemon = True
-            self.tray_thread.start()
+            # Critical: pystray icon MUST be started in its own thread to avoid blocking Tkinter
+            threading.Thread(target=self.tray.run, daemon=True).start()
 
     def show_window(self, *_): self.root.after(0, lambda: (self.root.deiconify(), self.root.lift(), self.root.focus_force()))
     def hide_to_tray(self, *_): self.root.withdraw()
