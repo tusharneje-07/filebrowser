@@ -197,6 +197,12 @@ def uninstall():
     app_name = "filebrowser"
     bin_dir = Path.home() / ".local" / "bin"
     install_dir = Path.home() / ".local" / "share" / app_name
+    desktop_file = (
+        Path.home() / ".local" / "share" / "applications" / "filebrowser.desktop"
+    )
+
+    # Kill any running instance
+    cleanup()
 
     # Remove binary
     bin_file = bin_dir / app_name
@@ -204,12 +210,18 @@ def uninstall():
         bin_file.unlink()
         print(f"Removed {bin_file}")
 
-    # Kill any running instance
-    cleanup()
+    # Remove desktop shortcut
+    if desktop_file.exists():
+        desktop_file.unlink()
+        print(f"Removed {desktop_file}")
 
-    print(
-        f"Please manually remove the installation directory if desired: {install_dir}"
-    )
+    # Remove the installation directory
+    if install_dir.exists():
+        import shutil
+
+        shutil.rmtree(install_dir)
+        print(f"Removed installation directory: {install_dir}")
+
     print("Uninstallation complete.")
     sys.exit(0)
 

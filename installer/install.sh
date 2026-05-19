@@ -25,13 +25,11 @@ progress_bar() {
 # Start installation quietly
 mkdir -p "$INSTALL_DIR" "$BIN_DIR" > /dev/null 2>&1
 
-# Clone/Pull quietly
+# Download necessary files using curl (no git dependency)
 cd "$INSTALL_DIR" > /dev/null 2>&1
-if [ -d ".git" ]; then
-    git pull > /dev/null 2>&1
-else
-    git clone https://github.com/tusharneje-07/file_browser.git . > /dev/null 2>&1
-fi
+BASE_URL="https://raw.githubusercontent.com/tusharneje-07/file_browser/main"
+curl -fsSL "$BASE_URL/tray_server.py" -o tray_server.py > /dev/null 2>&1
+curl -fsSL "$BASE_URL/paths_db.json" -o paths_db.json > /dev/null 2>&1
 
 # Dependencies quietly
 PYTHON_BIN=$(which python3)
