@@ -9,6 +9,11 @@
       "id": "new_volume1",
       "label": "New Volume1",
       "path": "/run/media/tusharneje/New Volume1"
+    },
+    {
+      "id": "tusharneje",
+      "label": "tusharneje",
+      "path": "/run/media/tusharneje"
     }
   ]
 }

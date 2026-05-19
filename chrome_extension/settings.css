@@ -1,0 +1,258 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light;
+  --app-bg: #f6f7fb;
+  --panel-bg: #ffffff;
+  --surface: #f1f2f6;
+  --surface-strong: #ffffff;
+  --text-main: #1f2937;
+  --text-muted: #667085;
+  --border: rgba(148, 163, 184, 0.35);
+  --accent: #2563eb;
+  --shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.theme-dark {
+  color-scheme: dark;
+  --app-bg: #0b1120;
+  --panel-bg: #0f172a;
+  --surface: #121c2f;
+  --surface-strong: #0f172a;
+  --text-main: #e2e8f0;
+  --text-muted: #a0aec0;
+  --border: rgba(148, 163, 184, 0.2);
+  --accent: #38bdf8;
+  --shadow: 0 10px 20px rgba(2, 6, 23, 0.35);
+}
+
+.settings-body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--app-bg);
+  color: var(--text-main);
+  font-family: "Nunito", "Segoe UI", sans-serif;
+}
+
+.settings-main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.settings-shell {
+  width: min(720px, 100%);
+  background: var(--panel-bg);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--border);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.settings-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.settings-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.icon-btn {
+  border: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.icon-btn .material-symbols-rounded {
+  font-size: 18px;
+}
+
+.icon-btn:hover {
+  background: var(--surface-strong);
+  border-color: var(--accent);
+}
+
+.settings-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.field-input {
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--surface-strong);
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  border: 1px solid var(--border);
+}
+
+.field-input:focus {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.field-helper {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-btn {
+  width: 48px;
+  height: 24px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(148, 163, 184, 0.35);
+  position: relative;
+  cursor: pointer;
+}
+
+.toggle-btn[aria-pressed="true"] {
+  background: rgba(37, 99, 235, 0.4);
+}
+
+.toggle-knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  transition: transform 150ms ease;
+}
+
+.toggle-btn[aria-pressed="true"] .toggle-knob {
+  transform: translateX(22px);
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.accent-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.accent-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: #2563eb;
+  cursor: pointer;
+}
+
+.accent-swatch[data-accent="teal"] {
+  background: #0d9488;
+}
+
+.accent-swatch[data-accent="green"] {
+  background: #16a34a;
+}
+
+.accent-swatch[data-accent="amber"] {
+  background: #d97706;
+}
+
+.accent-swatch[data-accent="rose"] {
+  background: #e11d48;
+}
+
+.accent-swatch.is-selected {
+  border-color: var(--text-main);
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.save-btn {
+  height: 40px;
+  min-width: 140px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.save-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.save-btn:hover {
+  filter: brightness(1.08);
+}
+
+@media (max-width: 640px) {
+  .settings-main {
+    padding: 16px;
+  }
+
+  .settings-shell {
+    padding: 18px;
+  }
+}

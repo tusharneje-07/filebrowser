@@ -3,7 +3,7 @@
   "name": "File Browser Sidebar",
   "description": "Browse local files and drag them into website upload areas.",
   "version": "1.6.0",
-  "permissions": ["sidePanel", "storage", "tabs"],
+  "permissions": ["sidePanel", "storage", "tabs", "clipboardWrite"],
   "host_permissions": [
     "http://127.0.0.1/*",
     "http://localhost/*"
@@ -23,5 +23,9 @@
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
+  },
+  "options_ui": {
+    "page": "settings.html",
+    "open_in_tab": true
   }
 }

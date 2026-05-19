@@ -5,35 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Browser</title>
     <link rel="stylesheet" href="tailwind.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,500,0,0" />
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body class="app-body">
     <main class="app-main">
       <section class="panel-shell">
         <header class="topbar">
-          <button id="homeBtn" class="nav-btn" type="button" title="Home">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z"/></svg>
-          </button>
-          <button id="backBtn" class="nav-btn" type="button" title="Back">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
-          </button>
-          <button id="forwardBtn" class="nav-btn" type="button" title="Forward">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-          </button>
-
-          <div class="crumb-wrap">
-            <div id="pathCrumbs" class="crumbs flex items-center gap-1 text-sm"></div>
+          <div class="address-row">
+            <div class="address-bar">
+              <span class="material-symbols-rounded address-icon" aria-hidden="true">folder_open</span>
+              <span id="pathText" class="path-text">Home</span>
+            </div>
+            <button id="themeToggleBtn" class="nav-btn theme-btn" type="button" title="Switch to light theme">
+              <span id="themeIcon" class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
+            </button>
+            <button id="copyPathBtn" class="nav-btn copy-btn" type="button" title="Copy path">
+              <span class="material-symbols-rounded" aria-hidden="true">content_copy</span>
+            </button>
           </div>
 
-          <div class="topbar-actions">
-            <button id="configBtn" class="nav-btn" type="button" title="Config">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.8a3.2 3.2 0 100 6.4 3.2 3.2 0 000-6.4z"/><path d="M19.4 15a1 1 0 00.2 1.1l.1.1a1.1 1.1 0 010 1.6l-1.2 1.2a1.1 1.1 0 01-1.6 0l-.1-.1a1 1 0 00-1.1-.2 1 1 0 00-.6.9V20a1.1 1.1 0 01-1.1 1.1h-1.8A1.1 1.1 0 0110 20v-.2a1 1 0 00-.6-.9 1 1 0 00-1.1.2l-.1.1a1.1 1.1 0 01-1.6 0l-1.2-1.2a1.1 1.1 0 010-1.6l.1-.1a1 1 0 00.2-1.1 1 1 0 00-.9-.6H4A1.1 1.1 0 012.9 13v-2A1.1 1.1 0 014 9.9h.2a1 1 0 00.9-.6 1 1 0 00-.2-1.1l-.1-.1a1.1 1.1 0 010-1.6l1.2-1.2a1.1 1.1 0 011.6 0l.1.1a1 1 0 001.1.2 1 1 0 00.6-.9V4A1.1 1.1 0 0110 2.9h2A1.1 1.1 0 0113.1 4v.2a1 1 0 00.6.9 1 1 0 001.1-.2l.1-.1a1.1 1.1 0 011.6 0l1.2 1.2a1.1 1.1 0 010 1.6l-.1.1a1 1 0 00-.2 1.1 1 1 0 00.9.6h.2A1.1 1.1 0 0121.1 11v2a1.1 1.1 0 01-1.1 1.1h-.2a1 1 0 00-.9.6z"/></svg>
+          <div class="toolbar-row">
+            <button id="homeBtn" class="tool-btn" type="button" title="Home">
+              <span class="material-symbols-rounded" aria-hidden="true">home</span>
+              <span class="tool-label">Home</span>
             </button>
-            <button id="togglePreviewBtn" class="nav-btn" type="button" title="Toggle Preview">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg>
+            <button id="backBtn" class="tool-btn" type="button" title="Previous">
+              <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+              <span class="tool-label">Previous</span>
             </button>
-            <button id="refreshBtn" class="nav-btn" type="button" title="Refresh">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg>
+            <button id="forwardBtn" class="tool-btn" type="button" title="Next">
+              <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+              <span class="tool-label">Next</span>
+            </button>
+            <button id="configBtn" class="tool-btn" type="button" title="Setting">
+              <span class="material-symbols-rounded" aria-hidden="true">settings</span>
+              <span class="tool-label">Setting</span>
+            </button>
+            <button id="togglePreviewBtn" class="tool-btn" type="button" title="View">
+              <span id="previewIcon" class="material-symbols-rounded" aria-hidden="true">visibility</span>
+              <span id="previewToggleLabel" class="tool-label">View</span>
+            </button>
+            <button id="refreshBtn" class="tool-btn" type="button" title="Refresh">
+              <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+              <span class="tool-label">Refresh</span>
             </button>
           </div>
         </header>
@@ -44,6 +60,10 @@
 
         <div class="content-wrap">
           <p id="statusLine" class="status-line">Ready</p>
+          <div id="multiSendBar" class="multi-send-bar hidden">
+            <span id="multiSendText" class="multi-send-text">2 files selected</span>
+            <button id="multiSendBtn" class="multi-send-btn" type="button">Send (2) files to site</button>
+          </div>
 
           <section id="explorerWrap" class="explorer-wrap">
             <ul id="fileList" class="file-grid"></ul>
@@ -59,24 +79,6 @@
           </section>
         </div>
 
-        <div id="configPanel" class="config-panel hidden">
-          <div class="config-card">
-            <div class="config-head">
-              <h3 class="config-title">Configuration</h3>
-              <button id="closeConfigBtn" class="nav-btn" type="button" title="Close config">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-
-            <label class="config-label" for="serverUrl">Server</label>
-            <input id="serverUrl" type="url" class="server-input" value="http://127.0.0.1:17650" />
-
-            <label class="config-label" for="rootSelect">Root</label>
-            <select id="rootSelect" class="root-select"></select>
-
-            <button id="saveServerBtn" class="save-btn" type="button">Save Config</button>
-          </div>
-        </div>
       </section>
     </main>
 

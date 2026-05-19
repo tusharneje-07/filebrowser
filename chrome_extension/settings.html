@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Browser Settings</title>
+    <link rel="stylesheet" href="tailwind.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,500,0,0" />
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body class="settings-body">
+    <main class="settings-main">
+      <section class="settings-shell">
+        <header class="settings-header">
+          <div>
+            <h1 class="settings-title">Configuration</h1>
+            <p class="settings-subtitle">Manage extension appearance and server connection.</p>
+          </div>
+          <button id="closeSettingsBtn" class="icon-btn" type="button" title="Close">
+            <span class="material-symbols-rounded" aria-hidden="true">close</span>
+          </button>
+        </header>
+
+        <section class="settings-card">
+          <div class="field">
+            <label class="field-label" for="serverUrl">Server URL</label>
+            <input id="serverUrl" type="url" class="field-input" placeholder="http://127.0.0.1:17650" />
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="field">
+            <label class="field-label" for="previewToggle">Preview Pane</label>
+            <div class="toggle-row">
+              <button id="previewToggle" type="button" class="toggle-btn" aria-pressed="false">
+                <span class="toggle-knob"></span>
+              </button>
+              <span id="previewLabel" class="toggle-label">Visible</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="settingsThemeToggle">Theme</label>
+            <div class="toggle-row">
+              <button id="settingsThemeToggle" type="button" class="toggle-btn" aria-pressed="false">
+                <span class="toggle-knob"></span>
+              </button>
+              <span id="settingsThemeLabel" class="toggle-label">Light</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="accentGroup">Accent Color</label>
+            <div id="accentGroup" class="accent-group" role="group" aria-label="Accent color">
+              <button class="accent-swatch" type="button" data-accent="blue" aria-label="Blue"></button>
+              <button class="accent-swatch" type="button" data-accent="teal" aria-label="Teal"></button>
+              <button class="accent-swatch" type="button" data-accent="green" aria-label="Green"></button>
+              <button class="accent-swatch" type="button" data-accent="amber" aria-label="Amber"></button>
+              <button class="accent-swatch" type="button" data-accent="rose" aria-label="Rose"></button>
+            </div>
+          </div>
+        </section>
+
+        <footer class="settings-footer">
+          <span id="saveStatus" class="save-status" role="status" aria-live="polite"></span>
+          <button id="saveSettingsBtn" class="save-btn" type="button">Save Config</button>
+        </footer>
+      </section>
+    </main>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

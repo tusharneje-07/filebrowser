@@ -1,77 +1,29 @@
-# File Browser
+# FileBrowser
 
-Production-ready local file browser product for Linux:
+A modern file browser application with a tray-based server and a Chrome extension frontend.
 
-- Flask-based file server (`file_server.py`)
-- Linux tray manager with Tkinter (`tray_server.py`)
-- Chrome side panel extension (`chrome_extension/`)
-- Configurable roots database (`paths_db.json`)
-- Runtime network config (`runtime_config.json`)
-- Optional user-level systemd service (`file_browser_service.py`)
+## Installation
 
-## Default Runtime
-
-- Host: `127.0.0.1`
-- Port: `17650` (high port to avoid common conflicts)
-
-Update host/port from the tray app under **Runtime Settings**.
-
-## Chrome Extension
-
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked**
-4. Select `chrome_extension`
-5. Open side panel from extension icon
-
-## Dev Run
+### Linux & MacOS
+To install FileBrowser instantly, run the following command in your terminal:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python tray_server.py
+curl -fsSL https://raw.githubusercontent.com/tusharneje-07/file_browser/main/installer/setup.sh | bash
 ```
 
-## Linux Installer (Product Mode)
-
-Install for current user:
-
-```bash
-./installer/linux/install.sh
+### Windows
+1. Open PowerShell as Administrator.
+2. Run the installer script:
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/tusharneje-07/file_browser/main/installer/install.ps1'))
 ```
 
-This installs:
+## Features
+- **Tray Icon Manager**: Control the server from your system tray.
+- **Cross-Platform**: Works on Linux, MacOS, and Windows.
+- **Chrome Extension**: Access your local files directly from your browser.
+- **Nunito Font**: Clean and modern typography.
 
-- App files at `~/.local/share/file-browser`
-- Launch commands:
-  - `file-browser` (tray manager)
-  - `file-browser-service` (headless service)
-- User systemd unit: `file-browser.service`
-- Desktop launcher entry
-
-Enable service startup:
-
-```bash
-systemctl --user enable --now file-browser.service
-```
-
-Check status:
-
-```bash
-systemctl --user status file-browser.service
-```
-
-## Build Linux Release Archive
-
-```bash
-./installer/linux/build_release.sh
-```
-
-Tarball is created in `dist/`.
-
-## Uninstall
-
-```bash
-./installer/linux/uninstall.sh
-```
+## Commands
+- `filebrowser`: Start the application.
+- `filebrowser uninstall`: Remove the application and all configurations.
